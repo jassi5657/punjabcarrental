@@ -1,0 +1,18 @@
+# dependencies / build output
+node_modules/
+dist/
+
+# server runtime data: db.json holds the admin password hash + JWT secret, uploads are user files
+server/data/
+server/uploads/
+
+# env + logs
+.env
+.env.*
+*.log
+*.tmp
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
