@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { api, fmtDate, getToken, money, setToken } from '../api.js'
+import { api, fmtDate, getToken, isMock, money, setToken } from '../api.js'
 import { useLoad, useTitle } from '../hooks.js'
 import { Counter, ErrorBox, Loader } from '../components/ui.jsx'
 
@@ -54,6 +54,7 @@ function Login({ onDone }) {
         <div className="logo-mark big">N</div>
         <h2>Admin access</h2>
         <p className="muted small">Sign in to manage cars, offers and bookings.</p>
+        {isMock && <p className="demo-hint">Demo mode - login <b>admin</b> / <b>admin123</b></p>}
         <label>Username<input className="input" value={f.username} onChange={(e) => setF({ ...f, username: e.target.value })} autoComplete="username" required /></label>
         <label>Password<input className="input" type="password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} autoComplete="current-password" required /></label>
         {err && <ErrorBox>{err}</ErrorBox>}
@@ -92,12 +93,28 @@ function Dashboard({ onLogout }) {
     [onLogout, notify],
   )
 
+  const [resetKey, setResetKey] = useState(0)
+  const resetDemo = async () => {
+    if (!window.confirm('Reset all demo cars, offers and bookings to the defaults?')) return
+    try {
+      await api.resetDemo()
+      setResetKey((k) => k + 1)
+      notify('Demo data reset')
+    } catch (e) {
+      guard(e)
+    }
+  }
+
   const props = { notify, guard }
   return (
     <section className="section container page-top">
       <div className="admin-head">
         <h1>Control center</h1>
-        <button className="btn btn-sm btn-ghost" onClick={onLogout}>Log out</button>
+        <div className="admin-head-actions">
+          {isMock && <span className="chip">Demo data</span>}
+          {isMock && <button className="btn btn-sm btn-ghost" onClick={resetDemo}>Reset demo data</button>}
+          <button className="btn btn-sm btn-ghost" onClick={onLogout}>Log out</button>
+        </div>
       </div>
       <div className="tabs">
         {TABS.map(([k, label]) => (
@@ -109,7 +126,7 @@ function Dashboard({ onLogout }) {
       </div>
 
       <AnimatePresence mode="wait">
-        <motion.div key={tab} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+        <motion.div key={`${tab}-${resetKey}`} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
           {tab === 'overview' && <Overview {...props} />}
           {tab === 'cars' && <Cars {...props} />}
           {tab === 'offers' && <Offers {...props} />}

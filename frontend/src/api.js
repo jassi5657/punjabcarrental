@@ -1,20 +1,12 @@
-const TOKEN_KEY = 'nova_admin_token'
+import { getToken } from './auth.js'
+import { mockApi } from './mock/mockApi.js'
 
-export const getToken = () => {
-  try {
-    return localStorage.getItem(TOKEN_KEY)
-  } catch {
-    return null
-  }
-}
-export const setToken = (t) => {
-  try {
-    if (t) localStorage.setItem(TOKEN_KEY, t)
-    else localStorage.removeItem(TOKEN_KEY)
-  } catch {
-    /* storage unavailable */
-  }
-}
+// Auth helpers live in auth.js (shared with the mock layer); re-exported for existing imports.
+export { getToken, setToken } from './auth.js'
+
+// The site runs on built-in dummy data (no backend needed). Set VITE_USE_MOCK=false to talk to
+// the Express server in /server instead.
+export const isMock = import.meta.env.VITE_USE_MOCK !== 'false'
 
 async function request(path, { method = 'GET', body, form } = {}) {
   const headers = {}
@@ -31,7 +23,7 @@ async function request(path, { method = 'GET', body, form } = {}) {
   return data
 }
 
-export const api = {
+const realApi = {
   cars: () => request('/api/cars'),
   car: (id) => request(`/api/cars/${id}`),
   offers: () => request('/api/offers'),
@@ -54,6 +46,8 @@ export const api = {
     return request('/api/upload', { method: 'POST', form })
   },
 }
+
+export const api = isMock ? mockApi : realApi
 
 export const money = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })
 
